@@ -52,6 +52,7 @@ func (s *HelloServer) SayHello(context.Context, *jamestestrpc.Empty) (*jamestest
 }
 
 func servegRPC() {
+	fmt.Println("Serving gRPC")
 	lis, err := net.Listen("tcp", ":8282")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -85,13 +86,13 @@ func startclient() {
 
 func main() {
 	//- [x] Hello run in docker
-	fmt.Println("Serve")
 	//- [x] go modules
 	//- [x] let's encrypt domain
 	//- [x] let's encrypt domain dockerImage
 	//serveHttps()
 	//- [ ] basic gRPC
 	//servegRPC()
+	fmt.Println("Client")
 	startclient()
 	//= [ ] basic gRPC with let's encrypt
 	//- [ ] gRPC with encryped static auth
