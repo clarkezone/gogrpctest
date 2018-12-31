@@ -95,14 +95,13 @@ func main() {
 	//- [x] let's encrypt domain
 	//- [x] let's encrypt domain dockerImage
 	//serveHttps()
-	//- [ ] basic gRPC
+	//- [x] basic gRPC
 	//servegRPC()
 	startclient()
 	//= [ ] basic gRPC with let's encrypt
-	//- [ ] gRPC with encryped static auth
-	//- [ ] Objective-C client
-	//- [ ] gRPC push
-	//- [ ] Redis based auth (or another SSO)
+	//- [ ] gRPC with encryped static auth and YAML config for UN/PW/secure etc
+	//- [ ] Objective-C watch client
+	//- [ ] gRPC streaming / push time tick
 	//- [ ] Promethius monitoring
-	//- [ ] intellisense in VIM
+	//- [ ] Pluggable / Redis based auth (or another SSO)
 }
