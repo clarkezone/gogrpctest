@@ -46,7 +46,7 @@ func serveHttps() {
 type HelloServer struct {
 }
 
-func (s *HelloServer) SayHello(context.Context, *jamestestrpc.Empty) (*jamestestrpc.TheHello, error) {
+func (s *HelloServer) SayHello(context.Context, *jamestestrpc.TheHello) (*jamestestrpc.TheHello, error) {
 	fmt.Println("SayHello")
 	return &jamestestrpc.TheHello{Jamesmessage: "Boooooo!"}, nil
 }
@@ -76,7 +76,7 @@ func startclient() {
 	defer conn.Close()
 
 	client := jamestestrpc.NewJamesTestServiceClient(conn)
-	result, err := client.SayHello(context.Background(), &jamestestrpc.Empty{})
+	result, err := client.SayHello(context.Background(), &jamestestrpc.TheHello{})
 
 	if err != nil {
 		log.Fatal("Error calling RPC: %v", err)
@@ -96,8 +96,8 @@ func main() {
 	//- [x] let's encrypt domain dockerImage
 	//serveHttps()
 	//- [ ] basic gRPC
-	servegRPC()
-	//startclient()
+	//servegRPC()
+	startclient()
 	//= [ ] basic gRPC with let's encrypt
 	//- [ ] gRPC with encryped static auth
 	//- [ ] Objective-C client

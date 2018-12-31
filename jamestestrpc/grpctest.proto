@@ -3,7 +3,7 @@ syntax = "proto3";
 package jamestestrpc;
 
 service JamesTestService {
-	rpc SayHello(Empty) returns (TheHello) {}
+	rpc SayHello(TheHello) returns (TheHello) {}
 }
 
 message TheHello {
