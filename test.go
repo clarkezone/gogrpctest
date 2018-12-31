@@ -58,14 +58,18 @@ func servegRPC() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	grpcServer := grpc.NewServer()
-	jamestestrpc.RegisterJamesTestServiceServer(grpcServer, &HelloServer{})
-	grpcServer.Serve(lis)
+	helloServer := HelloServer{}
+	jamestestrpc.RegisterJamesTestServiceServer(grpcServer, &helloServer)
+	err = grpcServer.Serve(lis)
+	if err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }
 
 func startclient() {
-	fmt.Println("client")
+	fmt.Println("Client")
 
-	conn, err := grpc.Dial("8282", grpc.WithInsecure())
+	conn, err := grpc.Dial(":8282", grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
@@ -75,13 +79,14 @@ func startclient() {
 	result, err := client.SayHello(context.Background(), &jamestestrpc.Empty{})
 
 	if err != nil {
-		if result == nil {
-			log.Fatal("Result was nil")
-		}
-		fmt.Println(result.Jamesmessage)
-	} else {
-		fmt.Println("There was an error")
+		log.Fatal("Error calling RPC: %v", err)
 	}
+
+	if result == nil {
+		log.Fatal("No error but Result was nil")
+	}
+
+	fmt.Println(result.Jamesmessage)
 }
 
 func main() {
@@ -91,9 +96,8 @@ func main() {
 	//- [x] let's encrypt domain dockerImage
 	//serveHttps()
 	//- [ ] basic gRPC
-	//servegRPC()
-	fmt.Println("Client")
-	startclient()
+	servegRPC()
+	//startclient()
 	//= [ ] basic gRPC with let's encrypt
 	//- [ ] gRPC with encryped static auth
 	//- [ ] Objective-C client
