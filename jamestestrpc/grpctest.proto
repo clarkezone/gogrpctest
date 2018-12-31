@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package jamestest;
+package jamestestrpc;
 
 service JamesTestService {
 	rpc SayHello(Empty) returns (TheHello) {}
