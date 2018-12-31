@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package jamestest;
+
+service JamesTestService {
+	rpc SayHello(Empty) returns (TheHello) {}
+}
+
+message TheHello {
+	string jamesmessage =1;
+}
+
+message Empty {
+}
