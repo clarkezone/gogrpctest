@@ -14,6 +14,7 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/reflection"
 )
 
 func myHandler(w http.ResponseWriter, req *http.Request) {
@@ -66,6 +67,45 @@ func servegRPC() {
 	if err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+}
+
+func servegRPCAutoCert() {
+	fmt.Println("Serving gRPC AutoCert")
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", 8443))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	grpcServer, err := listenWithAutoCert(0)
+	if err != nil {
+		log.Fatalf("failed to listenwithautocert: %v", err)
+	}
+	helloServer := HelloServer{}
+	jamestestrpc.RegisterJamesTestServiceServer(grpcServer, &helloServer)
+	err = grpcServer.Serve(lis)
+	if err != nil {
+		log.Fatalf("failed to serve grpc with autocert: %v", err)
+	}
+}
+
+func listenWithAutoCert(p int) (*grpc.Server, error) {
+	m := &autocert.Manager{
+		Cache:      autocert.DirCache("tls"),
+		Prompt:     autocert.AcceptTOS,
+		HostPolicy: autocert.HostWhitelist("vul3.objectivepixel.io"),
+	}
+	go http.ListenAndServe(":8080", m.HTTPHandler(nil))
+	creds := credentials.NewTLS(&tls.Config{GetCertificate: m.GetCertificate})
+	srv := grpc.NewServer(grpc.Creds(creds))
+	reflection.Register(srv)
+	return srv, nil
+}
+
+func listenBasic(p int) (net.Listener, error) {
+	lis, err := net.Listen("tcp", ":8282")
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	return lis, err
 }
 
 func startclient() {
@@ -128,6 +168,7 @@ func main() {
 	//servegRPC()
 	startclientsecure()
 	//= [ ] basic gRPC with let's encrypt
+	//servegRPCAutoCert()
 	//- [ ] gRPC with encryped static auth and YAML config for UN/PW/secure etc
 	//- [ ] Objective-C watch client
 	//- [ ] gRPC streaming / push time tick
