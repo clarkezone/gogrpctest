@@ -191,11 +191,12 @@ func main() {
 	//- [x] basic gRPC
 	//servegRPC()
 	//startclientsecure(c.TlsServerName, c.ClientPort)
-	//= [ ] basic gRPC with let's encrypt
+	//= [x] basic gRPC with let's encrypt
 	servegRPCAutoCert(c.TlsServerName, c.ServerPort)
 	//- [ ] gRPC with encryped static auth and YAML config for UN/PW/secure etc
-	//- [ ] Objective-C watch client
 	//- [ ] gRPC streaming / push time tick
 	//- [ ] Promethius monitoring
+	//- [ ] Objective-C client
+	//- [ ] Dart client
 	//- [ ] Pluggable / Redis based auth (or another SSO)
 }
