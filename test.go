@@ -9,6 +9,8 @@ import (
 	"net"
 	"net/http"
 	"time"
+	"io/ioutil"
+	"gopkg.in/yaml.v2"
 
 	"github.com/clarkezone/gotest/jamestestrpc"
 	"golang.org/x/crypto/acme/autocert"
@@ -44,6 +46,24 @@ func serveHttps() {
 		Handler:   http.HandlerFunc(myHandler),
 	}
 	log.Fatal(s.ListenAndServeTLS("", ""))
+}
+
+type conf struct {
+	ServerPort    int  `yaml:"serverport"`
+	TlsServerName string `yaml:"tlsservername"`
+	ClientPort int  `yaml:"clientport"`
+}
+
+func (c *conf) getConf() {
+
+    yamlFile, err := ioutil.ReadFile("conf.yaml")
+    if err != nil {
+        log.Printf("yamlFile.Get err   #%v ", err)
+    }
+    err = yaml.Unmarshal(yamlFile, c)
+    if err != nil {
+        log.Fatalf("Unmarshal: %v", err)
+    }
 }
 
 type HelloServer struct {
@@ -131,14 +151,14 @@ func startclient() {
 	fmt.Println(result.Jamesmessage)
 }
 
-func startclientsecure() {
+func startclientsecure(servername string, port int) {
 	fmt.Println("Client Secure")
 
-	conf := &tls.Config{ServerName: "vul3.objectivepixel.io"}
+	conf := &tls.Config{ServerName: servername}
 
 	creds := credentials.NewTLS(conf)
 
-	conn, err := grpc.Dial("vul3.objectivepixel.io:443", grpc.WithTransportCredentials(creds))
+	conn, err := grpc.Dial(fmt.Sprintf("%v:%v", servername, port), grpc.WithTransportCredentials(creds))
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
@@ -159,6 +179,8 @@ func startclientsecure() {
 }
 
 func main() {
+	var c conf
+	c.getConf()
 	//- [x] Hello run in docker
 	//- [x] go modules
 	//- [x] let's encrypt domain
@@ -166,7 +188,7 @@ func main() {
 	//serveHttps()
 	//- [x] basic gRPC
 	//servegRPC()
-	startclientsecure()
+	startclientsecure(c.TlsServerName, c.ClientPort)
 	//= [ ] basic gRPC with let's encrypt
 	//servegRPCAutoCert()
 	//- [ ] gRPC with encryped static auth and YAML config for UN/PW/secure etc
