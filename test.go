@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"log"
@@ -12,6 +13,7 @@ import (
 	"github.com/clarkezone/gotest/jamestestrpc"
 	"golang.org/x/crypto/acme/autocert"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 func myHandler(w http.ResponseWriter, req *http.Request) {
@@ -89,6 +91,33 @@ func startclient() {
 	fmt.Println(result.Jamesmessage)
 }
 
+func startclientsecure() {
+	fmt.Println("Client Secure")
+
+	conf := &tls.Config{ServerName: "vul3.objectivepixel.io"}
+
+	creds := credentials.NewTLS(conf)
+
+	conn, err := grpc.Dial("144.202.80.227:443", grpc.WithTransportCredentials(creds))
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+	defer conn.Close()
+
+	client := jamestestrpc.NewJamesTestServiceClient(conn)
+	result, err := client.SayHello(context.Background(), &jamestestrpc.TheHello{})
+
+	if err != nil {
+		log.Fatal("Error calling RPC: %v", err)
+	}
+
+	if result == nil {
+		log.Fatal("No error but Result was nil")
+	}
+
+	fmt.Println(result.Jamesmessage)
+}
+
 func main() {
 	//- [x] Hello run in docker
 	//- [x] go modules
@@ -97,7 +126,7 @@ func main() {
 	//serveHttps()
 	//- [x] basic gRPC
 	//servegRPC()
-	startclient()
+	startclientsecure()
 	//= [ ] basic gRPC with let's encrypt
 	//- [ ] gRPC with encryped static auth and YAML config for UN/PW/secure etc
 	//- [ ] Objective-C watch client
