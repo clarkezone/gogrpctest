@@ -1,0 +1,3 @@
+serverport: 8443
+tlsservername: servername
+clientport: 443
