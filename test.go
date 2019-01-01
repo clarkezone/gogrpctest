@@ -138,7 +138,7 @@ func startclientsecure() {
 
 	creds := credentials.NewTLS(conf)
 
-	conn, err := grpc.Dial("144.202.80.227:443", grpc.WithTransportCredentials(creds))
+	conn, err := grpc.Dial("vul3.objectivepixel.io:443", grpc.WithTransportCredentials(creds))
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
