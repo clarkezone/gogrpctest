@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	yaml "gopkg.in/yaml.v2"
@@ -17,6 +18,7 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -117,9 +119,33 @@ func listenWithAutoCert(serverName string, p int) (*grpc.Server, error) {
 	//todo: do we actually need to listen here to get autocert to work?  If yes, put port in config
 	go http.ListenAndServe(":8080", m.HTTPHandler(nil))
 	creds := credentials.NewTLS(&tls.Config{GetCertificate: m.GetCertificate})
-	srv := grpc.NewServer(grpc.Creds(creds))
+
+	opts := []grpc.ServerOption{grpc.Creds(creds),
+		grpc.UnaryInterceptor(unaryInterceptor)}
+
+	srv := grpc.NewServer(opts...)
 	reflection.Register(srv)
 	return srv, nil
+}
+
+func unaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	if info.FullMethod == "/proto.EventStoreService/GetJWT" { //skip auth when requesting JWT
+
+		return handler(ctx, req)
+	}
+
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		clientLogin := strings.Join(md["login"], "")
+
+		if clientLogin != "jimbojango" {
+			return nil, fmt.Errorf("bad creds")
+		}
+
+		//ctx = context.WithValue(ctx, clientIDKey, clientID)
+		return handler(ctx, req)
+	}
+
+	return nil, fmt.Errorf("missing credentials")
 }
 
 func listenBasic(p int) (net.Listener, error) {
@@ -143,7 +169,7 @@ func startclient() {
 	result, err := client.SayHello(context.Background(), &jamestestrpc.TheHello{})
 
 	if err != nil {
-		log.Fatal("Error calling RPC: %v", err)
+		log.Fatalf("Error calling RPC: %v", err)
 	}
 
 	if result == nil {
@@ -153,6 +179,20 @@ func startclient() {
 	fmt.Println(result.Jamesmessage)
 }
 
+type Authentication struct {
+	Login string
+}
+
+func (a *Authentication) GetRequestMetadata(context.Context, ...string) (map[string]string, error) {
+	return map[string]string{
+		"login": a.Login,
+	}, nil
+}
+
+func (a *Authentication) RequireTransportSecurity() bool {
+	return true
+}
+
 func startclientsecure(servername string, port int) {
 	fmt.Println("Client Secure")
 
@@ -160,7 +200,10 @@ func startclientsecure(servername string, port int) {
 
 	creds := credentials.NewTLS(conf)
 
-	conn, err := grpc.Dial(fmt.Sprintf("%v:%v", servername, port), grpc.WithTransportCredentials(creds))
+	auth := Authentication{Login: "jimbojango"}
+
+	conn, err := grpc.Dial(fmt.Sprintf("%v:%v", servername, port), grpc.WithTransportCredentials(creds),
+		grpc.WithPerRPCCredentials(&auth))
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
@@ -170,7 +213,7 @@ func startclientsecure(servername string, port int) {
 	result, err := client.SayHello(context.Background(), &jamestestrpc.TheHello{})
 
 	if err != nil {
-		log.Fatal("Error calling RPC: %v", err)
+		log.Fatalf("Error calling RPC: %v", err)
 	}
 
 	if result == nil {
@@ -190,9 +233,9 @@ func main() {
 	//serveHttps()
 	//- [x] basic gRPC
 	//servegRPC()
-	//startclientsecure(c.TlsServerName, c.ClientPort)
+	startclientsecure(c.TlsServerName, c.ClientPort)
 	//= [x] basic gRPC with let's encrypt
-	servegRPCAutoCert(c.TlsServerName, c.ServerPort)
+	//servegRPCAutoCert(c.TlsServerName, c.ServerPort)
 	//- [ ] gRPC with encryped static auth and YAML config for UN/PW/secure etc
 	//- [ ] gRPC streaming / push time tick
 	//- [ ] Promethius monitoring
