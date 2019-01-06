@@ -1,7 +1,5 @@
-client
 go.sum
 protoc
-server
 test
 tls
 conf.yaml
