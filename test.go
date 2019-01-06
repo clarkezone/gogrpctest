@@ -1,4 +1,4 @@
-package main
+package test
 
 import (
 	"context"
@@ -51,13 +51,13 @@ func serveHttps(serverName string, serverPort int) {
 	log.Fatal(s.ListenAndServeTLS("", ""))
 }
 
-type conf struct {
+type Conf struct {
 	ServerPort    int    `yaml:"serverport"`
 	TlsServerName string `yaml:"tlsservername"`
 	ClientPort    int    `yaml:"clientport"`
 }
 
-func (c *conf) getConf() {
+func (c *Conf) GetConf() {
 
 	yamlFile, err := ioutil.ReadFile("conf.yaml")
 	if err != nil {
@@ -77,7 +77,7 @@ func (s *HelloServer) SayHello(context.Context, *jamestestrpc.TheHello) (*jamest
 	return &jamestestrpc.TheHello{Jamesmessage: "Boooooo!"}, nil
 }
 
-func servegRPC() {
+func ServegRPC() {
 	fmt.Println("Serving gRPC")
 	lis, err := net.Listen("tcp", ":8282")
 	if err != nil {
@@ -92,7 +92,7 @@ func servegRPC() {
 	}
 }
 
-func servegRPCAutoCert(serverName string, serverPort int) {
+func ServegRPCAutoCert(serverName string, serverPort int) {
 	fmt.Println("Serving gRPC AutoCert")
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", serverPort))
 	if err != nil {
@@ -193,7 +193,7 @@ func (a *Authentication) RequireTransportSecurity() bool {
 	return true
 }
 
-func startclientsecure(servername string, port int) {
+func Startclientsecure(servername string, port int) {
 	fmt.Println("Client Secure")
 
 	conf := &tls.Config{ServerName: servername}
@@ -223,23 +223,23 @@ func startclientsecure(servername string, port int) {
 	fmt.Println(result.Jamesmessage)
 }
 
-func main() {
-	var c conf
-	c.getConf()
-	//- [x] Hello run in docker
-	//- [x] go modules
-	//- [x] let's encrypt domain
-	//- [x] let's encrypt domain dockerImage
-	//serveHttps()
-	//- [x] basic gRPC
-	//servegRPC()
-	startclientsecure(c.TlsServerName, c.ClientPort)
-	//= [x] basic gRPC with let's encrypt
-	//servegRPCAutoCert(c.TlsServerName, c.ServerPort)
-	//- [ ] gRPC with encryped static auth and YAML config for UN/PW/secure etc
-	//- [ ] gRPC streaming / push time tick
-	//- [ ] Promethius monitoring
-	//- [ ] Objective-C client
-	//- [ ] Dart client
-	//- [ ] Pluggable / Redis based auth (or another SSO)
-}
+//func main() {
+//var c conf
+//c.getConf()
+//- [x] Hello run in docker
+//- [x] go modules
+//- [x] let's encrypt domain
+//- [x] let's encrypt domain dockerImage
+//serveHttps()
+//- [x] basic gRPC
+//servegRPC()
+//startclientsecure(c.TlsServerName, c.ClientPort)
+//= [x] basic gRPC with let's encrypt
+//servegRPCAutoCert(c.TlsServerName, c.ServerPort)
+//- [ ] gRPC with encryped static auth and YAML config for UN/PW/secure etc
+//- [ ] gRPC streaming / push time tick
+//- [ ] Promethius monitoring
+//- [ ] Objective-C client
+//- [ ] Dart client
+//- [ ] Pluggable / Redis based auth (or another SSO)
+//}
