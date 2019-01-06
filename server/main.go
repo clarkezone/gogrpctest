@@ -8,5 +8,5 @@ func main() {
 	var c test.Conf
 	c.GetConf()
 
-	test.ServegRPCAutoCert(c.TlsServerName, c.ServerPort)
+	test.ServegRPC(c.TlsServerName, c.ServerPort)
 }

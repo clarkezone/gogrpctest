@@ -77,9 +77,25 @@ func (s *HelloServer) SayHello(context.Context, *jamestestrpc.TheHello) (*jamest
 	return &jamestestrpc.TheHello{Jamesmessage: "Boooooo!"}, nil
 }
 
-func ServegRPC() {
-	fmt.Println("Serving gRPC")
-	lis, err := net.Listen("tcp", ":8282")
+func (s *HelloServer) SayHelloStreaming(stream jamestestrpc.JamesTestService_SayHelloStreamingServer) error {
+	fmt.Println("Server:SayHelloStreaming")
+	for {
+		in, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != io.EOF {
+			return err
+		}
+		fmt.Printf("Server:Message received: %v", in)
+		stream.Send(&jamestestrpc.TheHello{Jamesmessage: "Boooooo!"})
+	}
+	return nil
+}
+
+func ServegRPC(serverName string, serverPort int) {
+	fmt.Printf("Serving gRPC for endpoint %v on port %v\n", serverName, serverPort)
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", serverPort))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
@@ -93,7 +109,7 @@ func ServegRPC() {
 }
 
 func ServegRPCAutoCert(serverName string, serverPort int) {
-	fmt.Println("Serving gRPC AutoCert")
+	fmt.Printf("Serving gRPC AutoCert for endpoint %v on port %v", serverName, serverPort)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", serverPort))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -156,16 +172,17 @@ func listenBasic(p int) (net.Listener, error) {
 	return lis, err
 }
 
-func startclient() {
+func Startclient(servername string, port int) {
 	fmt.Println("Client")
 
-	conn, err := grpc.Dial(":8282", grpc.WithInsecure())
+	conn, err := grpc.Dial(fmt.Sprintf("%v:%v", servername, port), grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
 	defer conn.Close()
 
 	client := jamestestrpc.NewJamesTestServiceClient(conn)
+
 	result, err := client.SayHello(context.Background(), &jamestestrpc.TheHello{})
 
 	if err != nil {
@@ -177,6 +194,34 @@ func startclient() {
 	}
 
 	fmt.Println(result.Jamesmessage)
+}
+
+func StartclientStreaming(servername string, port int) {
+	fmt.Printf("Client Streaming %v %v\n", servername, port)
+
+	conn, err := grpc.Dial(fmt.Sprintf("%v:%v", servername, port), grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("Client Error: %v", err)
+	}
+	defer conn.Close()
+
+	client := jamestestrpc.NewJamesTestServiceClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	stream, err := client.SayHelloStreaming(ctx)
+	//defer stream.CloseSend()
+	stream.Send(&jamestestrpc.TheHello{Jamesmessage: "FromFlicnet!"})
+	for {
+		in, err := stream.Recv()
+		if err != io.EOF {
+			log.Fatalf("Client Error: %v", err)
+		}
+		fmt.Printf("Client Received: %v", in)
+
+	}
+	if err != nil {
+		log.Fatalf("Client Error calling RPC: %v", err)
+	}
 }
 
 type Authentication struct {

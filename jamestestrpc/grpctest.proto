@@ -4,6 +4,7 @@ package jamestestrpc;
 
 service JamesTestService {
 	rpc SayHello(TheHello) returns (TheHello) {}
+	rpc SayHelloStreaming(stream TheHello) returns (stream TheHello) {}
 }
 
 message TheHello {
