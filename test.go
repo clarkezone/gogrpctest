@@ -82,14 +82,19 @@ func (s *HelloServer) SayHelloStreaming(stream jamestestrpc.JamesTestService_Say
 	for {
 		in, err := stream.Recv()
 		if err == io.EOF {
+			fmt.Println("Server:hit EOF, terminating")
 			return nil
 		}
-		if err != io.EOF {
+		if err != nil {
+			fmt.Printf("Server:hit error, terminating this call: %v %v", err)
 			return err
 		}
-		fmt.Printf("Server:Message received: %v", in)
-		stream.Send(&jamestestrpc.TheHello{Jamesmessage: "Boooooo!"})
+		fmt.Printf("Server:Message received: %v\n", in.Jamesmessage)
+		if err := stream.Send(&jamestestrpc.TheHello{Jamesmessage: "Boooooo! from server"}); err != nil {
+			log.Fatalf("Server: send error: %v", err)
+		}
 	}
+	fmt.Println("Returning nil")
 	return nil
 }
 
@@ -206,22 +211,34 @@ func StartclientStreaming(servername string, port int) {
 	defer conn.Close()
 
 	client := jamestestrpc.NewJamesTestServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	//defer cancel()
 	stream, err := client.SayHelloStreaming(ctx)
-	//defer stream.CloseSend()
-	stream.Send(&jamestestrpc.TheHello{Jamesmessage: "FromFlicnet!"})
-	for {
-		in, err := stream.Recv()
-		if err != io.EOF {
-			log.Fatalf("Client Error: %v", err)
-		}
-		fmt.Printf("Client Received: %v", in)
-
-	}
 	if err != nil {
 		log.Fatalf("Client Error calling RPC: %v", err)
 	}
+	waitc := make(chan struct{})
+	go func() {
+		in, err := stream.Recv()
+		if err != nil {
+			log.Fatalf("Client Error: %v", err)
+		}
+		if in == nil {
+			fmt.Println("Nothing received")
+		} else {
+			fmt.Printf("Client Received: %v\n", in.Jamesmessage)
+		}
+		close(waitc)
+	}()
+
+	err = stream.Send(&jamestestrpc.TheHello{Jamesmessage: "FromFlicnet!"})
+	if err != nil {
+		log.Fatalf("Send error %v\n", err)
+	}
+	fmt.Println("Client: message sent")
+	<-waitc
+	fmt.Println("Client: wait done, closing send")
+	stream.CloseSend()
 }
 
 type Authentication struct {
