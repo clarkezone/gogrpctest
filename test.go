@@ -51,13 +51,13 @@ func serveHttps(serverName string, serverPort int) {
 	log.Fatal(s.ListenAndServeTLS("", ""))
 }
 
-type Conf struct {
+type conf struct {
 	ServerPort    int    `yaml:"serverport"`
 	TlsServerName string `yaml:"tlsservername"`
 	ClientPort    int    `yaml:"clientport"`
 }
 
-func (c *Conf) GetConf() {
+func (c *conf) getConf() {
 
 	yamlFile, err := ioutil.ReadFile("conf.yaml")
 	if err != nil {
@@ -98,7 +98,18 @@ func (s *HelloServer) SayHelloStreaming(stream jamestestrpc.JamesTestService_Say
 	return nil
 }
 
-func ServegRPC(serverName string, serverPort int) {
+type BackendServer struct {
+	config: Conf*
+}
+
+func CreateBackendServer() *BackendServer {
+	bs := &BackendServer{}
+	bs.config = &Conf{}
+	bs.config.getConf()
+	return bs
+}
+
+func (be *BackendServer) ServegRPC(serverName string, serverPort int) {
 	fmt.Printf("Serving gRPC for endpoint %v on port %v\n", serverName, serverPort)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", serverPort))
 	if err != nil {
@@ -113,7 +124,7 @@ func ServegRPC(serverName string, serverPort int) {
 	}
 }
 
-func ServegRPCAutoCert(serverName string, serverPort int) {
+func (be *BackendServer) ServegRPCAutoCert(serverName string, serverPort int) {
 	fmt.Printf("Serving gRPC AutoCert for endpoint %v on port %v", serverName, serverPort)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", serverPort))
 	if err != nil {
@@ -131,7 +142,7 @@ func ServegRPCAutoCert(serverName string, serverPort int) {
 	}
 }
 
-func listenWithAutoCert(serverName string, p int) (*grpc.Server, error) {
+func (be *BackendServer) listenWithAutoCert(serverName string, p int) (*grpc.Server, error) {
 	m := &autocert.Manager{
 		Cache:      autocert.DirCache("tls"),
 		Prompt:     autocert.AcceptTOS,
@@ -142,14 +153,14 @@ func listenWithAutoCert(serverName string, p int) (*grpc.Server, error) {
 	creds := credentials.NewTLS(&tls.Config{GetCertificate: m.GetCertificate})
 
 	opts := []grpc.ServerOption{grpc.Creds(creds),
-		grpc.UnaryInterceptor(unaryInterceptor)}
+		grpc.UnaryInterceptor(be.unaryInterceptor)}
 
 	srv := grpc.NewServer(opts...)
 	reflection.Register(srv)
 	return srv, nil
 }
 
-func unaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func (be *BackendServer) unaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	if info.FullMethod == "/proto.EventStoreService/GetJWT" { //skip auth when requesting JWT
 
 		return handler(ctx, req)
