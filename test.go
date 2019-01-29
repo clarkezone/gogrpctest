@@ -98,18 +98,22 @@ func (s *HelloServer) SayHelloStreaming(stream jamestestrpc.JamesTestService_Say
 	return nil
 }
 
-type BackendServer struct {
-	config: Conf*
+type Backend struct {
+	config *conf
 }
 
-func CreateBackendServer() *BackendServer {
-	bs := &BackendServer{}
-	bs.config = &Conf{}
+func CreateBackend() *Backend {
+	bs := &Backend{}
+	bs.config = &conf{}
 	bs.config.getConf()
 	return bs
 }
 
-func (be *BackendServer) ServegRPC(serverName string, serverPort int) {
+func (be *Backend) ServegRPC() {
+	be.servegRPC(be.config.TlsServerName, be.config.ServerPort)
+}
+
+func (be *Backend) servegRPC(serverName string, serverPort int) {
 	fmt.Printf("Serving gRPC for endpoint %v on port %v\n", serverName, serverPort)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", serverPort))
 	if err != nil {
@@ -124,13 +128,13 @@ func (be *BackendServer) ServegRPC(serverName string, serverPort int) {
 	}
 }
 
-func (be *BackendServer) ServegRPCAutoCert(serverName string, serverPort int) {
+func (be *Backend) ServegRPCAutoCert(serverName string, serverPort int) {
 	fmt.Printf("Serving gRPC AutoCert for endpoint %v on port %v", serverName, serverPort)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", serverPort))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	grpcServer, err := listenWithAutoCert(serverName, 0)
+	grpcServer, err := be.listenWithAutoCert(serverName, 0)
 	if err != nil {
 		log.Fatalf("failed to listenwithautocert: %v", err)
 	}
@@ -142,7 +146,7 @@ func (be *BackendServer) ServegRPCAutoCert(serverName string, serverPort int) {
 	}
 }
 
-func (be *BackendServer) listenWithAutoCert(serverName string, p int) (*grpc.Server, error) {
+func (be *Backend) listenWithAutoCert(serverName string, p int) (*grpc.Server, error) {
 	m := &autocert.Manager{
 		Cache:      autocert.DirCache("tls"),
 		Prompt:     autocert.AcceptTOS,
@@ -160,7 +164,7 @@ func (be *BackendServer) listenWithAutoCert(serverName string, p int) (*grpc.Ser
 	return srv, nil
 }
 
-func (be *BackendServer) unaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func (be *Backend) unaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	if info.FullMethod == "/proto.EventStoreService/GetJWT" { //skip auth when requesting JWT
 
 		return handler(ctx, req)
@@ -178,6 +182,10 @@ func (be *BackendServer) unaryInterceptor(ctx context.Context, req interface{}, 
 	}
 
 	return nil, fmt.Errorf("missing credentials")
+}
+
+func (be *Backend) StartclientStreaming() {
+	startclientStreaming(be.config.TlsServerName, be.config.ClientPort)
 }
 
 func listenBasic(p int) (net.Listener, error) {
@@ -212,7 +220,7 @@ func Startclient(servername string, port int) {
 	fmt.Println(result.Jamesmessage)
 }
 
-func StartclientStreaming(servername string, port int) {
+func startclientStreaming(servername string, port int) {
 	fmt.Printf("Client Streaming %v %v\n", servername, port)
 
 	conn, err := grpc.Dial(fmt.Sprintf("%v:%v", servername, port), grpc.WithInsecure())
@@ -266,7 +274,7 @@ func (a *Authentication) RequireTransportSecurity() bool {
 	return true
 }
 
-func Startclientsecure(servername string, port int) {
+func startclientsecure(servername string, port int) {
 	fmt.Println("Client Secure")
 
 	conf := &tls.Config{ServerName: servername}
