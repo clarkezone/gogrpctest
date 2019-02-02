@@ -7,7 +7,6 @@ import (
 func main() {
 	bs := test.CreateBackend()
 	//bs.StartclientStreaming()
-	bs.StartclientSecure()
-
-	//streaming secure
+	//bs.StartclientSecure()
+	bs.StartclientStreamingSecure()
 }

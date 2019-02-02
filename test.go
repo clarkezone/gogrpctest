@@ -162,7 +162,9 @@ func (be *Backend) listenWithAutoCert(serverName string, p int) (*grpc.Server, e
 	creds := credentials.NewTLS(&tls.Config{GetCertificate: m.GetCertificate})
 
 	opts := []grpc.ServerOption{grpc.Creds(creds),
-		grpc.UnaryInterceptor(be.unaryInterceptor)}
+		grpc.UnaryInterceptor(be.unaryInterceptor),
+		grpc.StreamInterceptor(be.streamInterceptor),
+	}
 
 	srv := grpc.NewServer(opts...)
 	reflection.Register(srv)
@@ -189,12 +191,29 @@ func (be *Backend) unaryInterceptor(ctx context.Context, req interface{}, info *
 	return nil, fmt.Errorf("missing credentials")
 }
 
+func (be *Backend) streamInterceptor(req interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	if md, ok := metadata.FromIncomingContext(ss.Context()); ok {
+		clientLogin := strings.Join(md["login"], "")
+
+		if clientLogin != be.config.Secret {
+			return fmt.Errorf("bad creds")
+		}
+
+		return nil
+	}
+	return fmt.Errorf("missing credentials")
+}
+
 func (be *Backend) StartclientStreaming() {
 	startclientStreaming(be.config.TlsServerName, be.config.ClientPort)
 }
 
 func (be *Backend) StartclientSecure() {
 	startclientsecure(be.config.TlsServerName, be.config.ClientPort, be.config.Secret)
+}
+
+func (be *Backend) StartclientStreamingSecure() {
+	startclientStreamingSecure(be.config.TlsServerName, be.config.ClientPort, be.config.Secret)
 }
 
 func listenBasic(p int) (net.Listener, error) {
@@ -269,6 +288,53 @@ func startclientStreaming(servername string, port int) {
 	stream.CloseSend()
 }
 
+func startclientStreamingSecure(servername string, port int, keyword string) {
+	fmt.Printf("Client Streaming %v %v\n", servername, port)
+
+	conf := &tls.Config{ServerName: servername}
+
+	creds := credentials.NewTLS(conf)
+
+	auth := Authentication{Login: keyword}
+
+	conn, err := grpc.Dial(fmt.Sprintf("%v:%v", servername, port), grpc.WithTransportCredentials(creds),
+		grpc.WithPerRPCCredentials(&auth))
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+	defer conn.Close()
+
+	client := jamestestrpc.NewJamesTestServiceClient(conn)
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	//defer cancel()
+	stream, err := client.SayHelloStreaming(ctx)
+	if err != nil {
+		log.Fatalf("Client Error calling RPC: %v", err)
+	}
+	waitc := make(chan struct{})
+	go func() {
+		in, err := stream.Recv()
+		if err != nil {
+			log.Fatalf("Client Error: %v", err)
+		}
+		if in == nil {
+			fmt.Println("Nothing received")
+		} else {
+			fmt.Printf("Client Received: %v\n", in.Jamesmessage)
+		}
+		close(waitc)
+	}()
+
+	err = stream.Send(&jamestestrpc.TheHello{Jamesmessage: "FromFlicnet!"})
+	if err != nil {
+		log.Fatalf("Send error %v\n", err)
+	}
+	fmt.Println("Client: message sent")
+	<-waitc
+	fmt.Println("Client: wait done, closing send")
+	stream.CloseSend()
+}
+
 type Authentication struct {
 	Login string
 }
@@ -284,7 +350,7 @@ func (a *Authentication) RequireTransportSecurity() bool {
 }
 
 func startclientsecure(servername string, port int, keyword string) {
-	fmt.Printf("Client Secure: servername:%v port:%v keyword:%v", servername, port, keyword)
+	fmt.Printf("Client Secure: servername:%v port:%v keyword:%v\n", servername, port, keyword)
 
 	conf := &tls.Config{ServerName: servername}
 
