@@ -55,6 +55,7 @@ type conf struct {
 	ServerPort    int    `yaml:"serverport"`
 	TlsServerName string `yaml:"tlsservername"`
 	ClientPort    int    `yaml:"clientport"`
+	Secret        string `yaml:"secret"`
 }
 
 func (c *conf) getConf() {
@@ -173,7 +174,7 @@ func (be *Backend) unaryInterceptor(ctx context.Context, req interface{}, info *
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
 		clientLogin := strings.Join(md["login"], "")
 
-		if clientLogin != "jimbojango" {
+		if clientLogin != be.config.Secret {
 			return nil, fmt.Errorf("bad creds")
 		}
 
@@ -186,6 +187,10 @@ func (be *Backend) unaryInterceptor(ctx context.Context, req interface{}, info *
 
 func (be *Backend) StartclientStreaming() {
 	startclientStreaming(be.config.TlsServerName, be.config.ClientPort)
+}
+
+func (be *Backend) StartclientSecure() {
+	startclientsecure(be.config.TlsServerName, be.config.ClientPort, be.config.Secret)
 }
 
 func listenBasic(p int) (net.Listener, error) {
@@ -274,14 +279,14 @@ func (a *Authentication) RequireTransportSecurity() bool {
 	return true
 }
 
-func startclientsecure(servername string, port int) {
+func startclientsecure(servername string, port int, keyword string) {
 	fmt.Println("Client Secure")
 
 	conf := &tls.Config{ServerName: servername}
 
 	creds := credentials.NewTLS(conf)
 
-	auth := Authentication{Login: "jimbojango"}
+	auth := Authentication{Login: keyword}
 
 	conn, err := grpc.Dial(fmt.Sprintf("%v:%v", servername, port), grpc.WithTransportCredentials(creds),
 		grpc.WithPerRPCCredentials(&auth))
