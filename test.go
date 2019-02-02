@@ -114,6 +114,10 @@ func (be *Backend) ServegRPC() {
 	be.servegRPC(be.config.TlsServerName, be.config.ServerPort)
 }
 
+func (be *Backend) ServegRPCAutoCert() {
+	be.servegRPCAutoCert(be.config.TlsServerName, be.config.ServerPort)
+}
+
 func (be *Backend) servegRPC(serverName string, serverPort int) {
 	fmt.Printf("Serving gRPC for endpoint %v on port %v\n", serverName, serverPort)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", serverPort))
@@ -129,8 +133,8 @@ func (be *Backend) servegRPC(serverName string, serverPort int) {
 	}
 }
 
-func (be *Backend) ServegRPCAutoCert(serverName string, serverPort int) {
-	fmt.Printf("Serving gRPC AutoCert for endpoint %v on port %v", serverName, serverPort)
+func (be *Backend) servegRPCAutoCert(serverName string, serverPort int) {
+	fmt.Printf("Serving gRPC AutoCert for endpoint %v on port %v\n", serverName, serverPort)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", serverPort))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -280,7 +284,7 @@ func (a *Authentication) RequireTransportSecurity() bool {
 }
 
 func startclientsecure(servername string, port int, keyword string) {
-	fmt.Println("Client Secure")
+	fmt.Printf("Client Secure: servername:%v port:%v keyword:%v", servername, port, keyword)
 
 	conf := &tls.Config{ServerName: servername}
 

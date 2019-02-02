@@ -6,5 +6,6 @@ import (
 
 func main() {
 	bs := test.CreateBackend()
-	bs.ServegRPC()
+	//bs.ServegRPC()
+	bs.ServegRPCAutoCert()
 }
