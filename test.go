@@ -199,7 +199,7 @@ func (be *Backend) streamInterceptor(req interface{}, ss grpc.ServerStream, info
 			return fmt.Errorf("bad creds")
 		}
 
-		return nil
+		return handler(req, ss)
 	}
 	return fmt.Errorf("missing credentials")
 }
