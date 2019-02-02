@@ -163,7 +163,7 @@ func (be *Backend) listenWithAutoCert(serverName string, p int) (*grpc.Server, e
 
 	opts := []grpc.ServerOption{grpc.Creds(creds),
 		grpc.UnaryInterceptor(be.unaryInterceptor),
-		grpc.StreamInterceptor(be.streamInterceptor),
+		//grpc.StreamInterceptor(be.streamInterceptor),
 	}
 
 	srv := grpc.NewServer(opts...)
