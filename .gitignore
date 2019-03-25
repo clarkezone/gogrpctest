@@ -1,8 +1,4 @@
 go.sum
 protoc
-client/main
-server/main
 tls
-client/conf.yaml
-server/conf.yaml
 jamestestrpc/grpctest.pb.go

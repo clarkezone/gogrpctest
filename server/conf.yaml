@@ -1,3 +1,4 @@
 serverport: 8443
-tlsservername: 
+tlsservername: vul3.objectivepixel.io
 clientport: 443
+secret: foomanchoo
