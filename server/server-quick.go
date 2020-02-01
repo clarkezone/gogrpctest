@@ -26,7 +26,7 @@ func init() {
 func main() {
 
 	if createemptyconfig {
-		ggq.CreateEmptyConfig()
+		ggq.CreateEmptyServerConfig()
 		os.Exit(0)
 	}
 
@@ -37,7 +37,7 @@ func main() {
 		jamestestrpc.RegisterJamesTestServiceServer(fn, &helloServer)
 	}
 
-	config := ggq.GetConfig()
+	config := ggq.GetServerConfig()
 	if (config == nil) {
 		fmt.Println("No config found.  Use flag to create empty")
 		os.Exit(1)

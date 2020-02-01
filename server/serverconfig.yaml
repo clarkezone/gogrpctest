@@ -1,4 +1,2 @@
 serverport: 8443
 tlsservername: vul3.objectivepixel.io
-clientport: 443
-secret: blowviate

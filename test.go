@@ -87,7 +87,7 @@ func (s *HelloServer) SayHelloStreaming(stream jamestestrpc.JamesTestService_Say
 			return nil
 		}
 		if err != nil {
-			fmt.Printf("Server:hit error, terminating this call: %v %v", err)
+			fmt.Printf("Server:hit error, terminating this call: %v", err)
 			return err
 		}
 		fmt.Printf("Server:Message received: %v\n", in.Jamesmessage)
@@ -95,7 +95,7 @@ func (s *HelloServer) SayHelloStreaming(stream jamestestrpc.JamesTestService_Say
 			log.Fatalf("Server: send error: %v", err)
 		}
 	}
-	fmt.Println("Returning nil")
+	//fmt.Println("Returning nil")
 	return nil
 }
 
