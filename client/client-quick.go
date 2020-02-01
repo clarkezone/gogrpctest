@@ -22,7 +22,7 @@ func init() {
 
 func main() {
 	if createemptyconfig {
-		ggq.CreateEmptyServerConfig()
+		ggq.CreateEmptyClientConfig()
 		os.Exit(0)
 	}
 
