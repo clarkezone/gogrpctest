@@ -4,7 +4,7 @@ import (
 	test "github.com/clarkezone/gotest"
 )
 
-func main() {
+func mainr() {
 	bs := test.CreateBackend()
 	bs.StartclientStreaming()
 	//bs.StartclientSecure()
