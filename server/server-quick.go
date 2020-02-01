@@ -2,6 +2,10 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"flag"
+
+	"golang.org/x/net/context"
 
 	ggq "github.com/clarkezone/go-grpc-quick"
 	test "github.com/clarkezone/gotest"
@@ -9,13 +13,36 @@ import (
 	"google.golang.org/grpc"
 )
 
+var (
+	createemptyconfig    bool
+	
+)
+
+func init() {
+	flag.BoolVar(&createemptyconfig, "c", false, "create an empty configurtion file")
+	flag.Parse()
+}
+
 func main() {
+
+	if createemptyconfig {
+		ggq.CreateEmptyConfig()
+		os.Exit(0)
+	}
+
+	ctx := ggq.SignalContext(context.Background()) //todo move into grpcquick
 	helloServer := test.HelloServer{}
 	foo := func(fn *grpc.Server) {
 		fmt.Println("Callback register")
 		jamestestrpc.RegisterJamesTestServiceServer(fn, &helloServer)
 	}
 
-	s := ggq.CreateServer()
-	s.Serve(foo)
+	config := ggq.GetConfig()
+	if (config == nil) {
+		fmt.Println("No config found.  Use flag to create empty")
+		os.Exit(1)
+	}
+
+	s := ggq.CreateServer(config)
+	s.Serve(ctx, foo)
 }
