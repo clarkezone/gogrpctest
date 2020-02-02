@@ -1,0 +1,11 @@
+authtoken: <ngrok_token>
+tunnels:
+  myapp-http:
+    addr: 8080
+    proto: http
+    hostname: example.com
+    bind_tls: false
+  mypp-https:
+    addr: 8443
+    proto: tls
+    hostname: example.com
